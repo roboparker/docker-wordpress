@@ -1,45 +1,57 @@
 version: "3"
 services:
   db:
-    image: mysql:8.0
+    build:
+      dockerfile: docker/mysql/Dockerfile
+      context: .
     volumes:
-      - ./mysql/conf:/etc/mysql/conf.d
-      - ./mysql/data:/var/lib/mysql
-      - ./mysql/init:/docker-entrypoint-initdb.d
+      - mysql:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
     restart: always
     environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: ${MYSQL_RANDOM_ROOT_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ALLOW_EMPTY_PASSWORD: ~
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - 3306:3306
     networks:
       - wpsite
-  phpmyadmin:
+  adminer:
     depends_on:
       - db
-    image: phpmyadmin/phpmyadmin
+    image: adminer
     restart: always
     ports:
-      - '8080:80'
-    environment:
-      PMA_HOST: db
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      - 8080:8080
     networks:
       - wpsite
   wordpress:
+    build:
+      dockerfile: docker/php/Dockerfile
+      context: .
     depends_on:
       - db
-    image: wordpress:php7.4
     ports:
-      - '8000:80'
+      - 8000:80
     restart: always
     volumes:
-      - ./:/var/www/html
+      - ./wordpress:/var/www/html
     environment:
+      XDEBUG_CONFIG: remote_host=192.168.1.2
+      WORDPRESS_DEBUG: 1
       WORDPRESS_DB_HOST: db:3306
       WORDPRESS_DB_USER: ${MYSQL_USER}
       WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+      WORDPRESS_CONFIG_EXTRA: |
+        define( 'WP_DEBUG_DISPLAY', true );
+        define( 'WP_DEBUG_LOG', true );
+        define( 'FS_METHOD', 'direct' );
     networks:
       - wpsite
 networks:
   wpsite:
+volumes:
+  mysql:
