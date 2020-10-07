@@ -16,7 +16,7 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
-      - 3306:3306
+      - ${MYSQL_PORT}:3306
     networks:
       - wpsite
   adminer:
@@ -25,7 +25,7 @@ services:
     image: adminer
     restart: always
     ports:
-      - 8080:8080
+      - ${ADMINER_PORT}:8080
     networks:
       - wpsite
   wordpress:
@@ -35,7 +35,7 @@ services:
     depends_on:
       - db
     ports:
-      - 8000:80
+      - ${WORDPRESS_PORT}:80
     restart: always
     volumes:
       - ./wordpress:/var/www/html
